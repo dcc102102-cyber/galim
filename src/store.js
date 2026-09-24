@@ -242,18 +242,15 @@ function migrateFromJsonIfNeeded() {
 //
 // Расписание единое на каждый день недели (без разбивки на будни/выходные) —
 // по актуальной афише конкурента-образца: 5 рейсов Акьяр→Уфа и 7 рейсов
-// Уфа→Акьяр, ежедневно. "24:00" с афиши записан как "00:00" (это один и тот
-// же момент суток, просто в другой записи) — единственный нюанс: при
-// сортировке по времени он окажется ПЕРВЫМ в списке на эту дату, а не
-// последним, как на афише, потому что 00:00 меньше 09:00. Если это будет
-// мешать — скажите, поменяем способ отображения.
+// Уфа→Акьяр, ежедневно. Ночной рейс записан как "24:00" (как на афише), поэтому
+// при сортировке по времени он идёт ПОСЛЕДНИМ в списке дня — после 21:00.
 const DEFAULT_SCHEDULE = [
   // Акьяр → Уфа
   { id: 's1', direction: 'YA_UFA', time: '09:00', weekdays: [0, 1, 2, 3, 4, 5, 6], active: true },
   { id: 's2', direction: 'YA_UFA', time: '12:00', weekdays: [0, 1, 2, 3, 4, 5, 6], active: true },
   { id: 's3', direction: 'YA_UFA', time: '15:00', weekdays: [0, 1, 2, 3, 4, 5, 6], active: true },
   { id: 's4', direction: 'YA_UFA', time: '18:00', weekdays: [0, 1, 2, 3, 4, 5, 6], active: true },
-  { id: 's5', direction: 'YA_UFA', time: '00:00', weekdays: [0, 1, 2, 3, 4, 5, 6], active: true },
+  { id: 's5', direction: 'YA_UFA', time: '24:00', weekdays: [0, 1, 2, 3, 4, 5, 6], active: true },
   // Уфа → Акьяр
   { id: 's6', direction: 'UFA_YA', time: '06:00', weekdays: [0, 1, 2, 3, 4, 5, 6], active: true },
   { id: 's7', direction: 'UFA_YA', time: '09:00', weekdays: [0, 1, 2, 3, 4, 5, 6], active: true },
@@ -309,6 +306,23 @@ function migrateScheduleAkyarV2IfNeeded() {
 }
 
 migrateScheduleAkyarV2IfNeeded();
+
+// Разовая миграция: время "00:00" -> "24:00" везде (шаблон расписания, правки
+// на даты, доп. машины, заявки, лист ожидания), чтобы ночной рейс шёл в списке
+// после 21:00, а не первым. Флаг в meta — повторно не запускается.
+function migrateMidnightTo2400IfNeeded() {
+  if (getMeta('migratedMidnightTo2400', 0)) return;
+  const tx = conn.transaction(() => {
+    ['schedule', 'schedule_overrides', 'extra_cars', 'bookings', 'waitlist'].forEach((table) => {
+      conn.prepare(`UPDATE ${table} SET time = '24:00' WHERE time IN ('00:00', '0:00')`).run();
+    });
+    setMeta('migratedMidnightTo2400', 1);
+  });
+  tx();
+  console.log('[store] Время 00:00 заменено на 24:00.');
+}
+
+migrateMidnightTo2400IfNeeded();
 
 if (isFreshDb) {
   migrateFromJsonIfNeeded();
