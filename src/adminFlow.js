@@ -98,8 +98,8 @@ function buildGroupBroadcastText(date, trips) {
   });
   text +=
     `\nЧтобы записаться — напишите боту в личные сообщения:\n` +
-    `🤖 https://max.ru/id021401888395_bot\n` +
-    `или позвоните: +7 937 347-99-30`;
+    `🤖 https://max.ru/id021401888395_1_bot\n` +
+    `или позвоните: +79273336124`;
   return text;
 }
 
