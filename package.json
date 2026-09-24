@@ -1,0 +1,17 @@
+{
+  "name": "akyar-ufa-taxi-bot-zyat",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@maxhub/max-bot-api": "^0.3.1",
+    "better-sqlite3": "^11.9.1",
+    "dotenv": "^16.4.5"
+  }
+}
