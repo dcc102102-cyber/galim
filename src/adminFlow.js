@@ -77,7 +77,9 @@ function buildGroupFreeSeatsText(info, date, free) {
     `🚕 Есть свободные места!\n\n` +
     `${fmt.directionLabel(info.direction)}${info.isExtra ? ' 🚐 (доп. машина)' : ''}\n` +
     `${fmt.formatDateRu(date)}, ${info.time}\n\n` +
-    `Чтобы записаться — напишите боту в личные сообщения.`
+    `Чтобы записаться — напишите боту в личные сообщения:\n` +
+    `🤖 https://max.ru/id021401888395_1_bot\n` +
+    `или позвоните: +79273336124`
   );
 }
 
