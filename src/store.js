@@ -116,6 +116,17 @@ conn.exec(`
   CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
 `);
 
+// Миграция: число мест для конкретного рейса на конкретную дату (NULL — как обычно,
+// из MAX_SEATS). Для уже существующей базы колонку добавляем один раз.
+try {
+  const cols = conn.prepare('PRAGMA table_info(schedule_overrides)').all();
+  if (!cols.some((c) => c.name === 'capacity')) {
+    conn.exec('ALTER TABLE schedule_overrides ADD COLUMN capacity INTEGER');
+  }
+} catch (e) {
+  console.error('[store] Не удалось добавить колонку capacity:', e);
+}
+
 // --- Счётчики id (аналог nextBookingId/nextScheduleId/nextExtraCarId из JSON) ---
 
 const stmtGetMeta = conn.prepare('SELECT value FROM meta WHERE key = ?');
@@ -321,7 +332,13 @@ function rowToScheduleItem(row) {
 
 function rowToOverride(row) {
   if (!row) return null;
-  return { date: row.date, templateId: row.template_id, deleted: !!row.deleted, time: row.time };
+  return {
+    date: row.date,
+    templateId: row.template_id,
+    deleted: !!row.deleted,
+    time: row.time,
+    capacity: row.capacity || null,
+  };
 }
 
 function rowToExtraCar(row) {
@@ -362,8 +379,8 @@ const stmt = {
 
   getOverride: conn.prepare('SELECT * FROM schedule_overrides WHERE date = ? AND template_id = ?'),
   upsertOverride: conn.prepare(`
-    INSERT INTO schedule_overrides (date, template_id, deleted, time) VALUES (?,?,?,?)
-    ON CONFLICT(date, template_id) DO UPDATE SET deleted = excluded.deleted, time = excluded.time
+    INSERT INTO schedule_overrides (date, template_id, deleted, time, capacity) VALUES (?,?,?,?,?)
+    ON CONFLICT(date, template_id) DO UPDATE SET deleted = excluded.deleted, time = excluded.time, capacity = excluded.capacity
   `),
   deleteOverride: conn.prepare('DELETE FROM schedule_overrides WHERE date = ? AND template_id = ?'),
 
@@ -490,7 +507,12 @@ const db = {
       .map((s) => {
         const ov = db.getOverride(date, s.id);
         if (ov && ov.deleted) return null;
-        return { ...s, time: ov && ov.time ? ov.time : s.time, overridden: !!(ov && ov.time) };
+        return {
+          ...s,
+          time: ov && ov.time ? ov.time : s.time,
+          overridden: !!(ov && ov.time),
+          capacity: ov && ov.capacity ? ov.capacity : null,
+        };
       })
       .filter(Boolean);
   },
@@ -502,13 +524,28 @@ const db = {
   },
 
   setOverrideTime(date, templateId, time) {
-    stmt.upsertOverride.run(date, templateId, 0, time);
+    const existing = db.getOverride(date, templateId);
+    stmt.upsertOverride.run(date, templateId, 0, time, existing ? existing.capacity : null);
+    return db.getOverride(date, templateId);
+  },
+
+  // Число мест в рейсе ТОЛЬКО на эту дату (шаблон и другие дни не меняются).
+  // capacity = null — вернуть обычное число мест (MAX_SEATS).
+  setOverrideCapacity(date, templateId, capacity) {
+    const existing = db.getOverride(date, templateId);
+    stmt.upsertOverride.run(
+      date,
+      templateId,
+      existing && existing.deleted ? 1 : 0,
+      existing ? existing.time : null,
+      capacity
+    );
     return db.getOverride(date, templateId);
   },
 
   setOverrideDeleted(date, templateId) {
     const existing = db.getOverride(date, templateId);
-    stmt.upsertOverride.run(date, templateId, 1, existing ? existing.time : null);
+    stmt.upsertOverride.run(date, templateId, 1, existing ? existing.time : null, existing ? existing.capacity : null);
     return db.getOverride(date, templateId);
   },
 

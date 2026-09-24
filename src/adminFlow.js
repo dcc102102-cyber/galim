@@ -421,14 +421,14 @@ function registerAdminFlow(bot) {
     }
     const village = fmt.VILLAGES[idx];
     if (!village) {
-      await ctx.reply('Не удалось распознать деревню, попробуйте ещё раз.');
+      await ctx.reply('Не удалось распознать населённый пункт, попробуйте ещё раз.');
       return;
     }
     st.village = village;
     if (st.direction === 'YA_UFA') {
       st.step = 'admin_add_address';
       session.set(userId, st);
-      await ctx.reply('Введите адрес в деревне (откуда забрать):');
+      await ctx.reply('Введите адрес в населённом пункте (откуда забрать):');
     } else {
       st.step = 'admin_add_seats';
       session.set(userId, st);
@@ -446,7 +446,7 @@ function registerAdminFlow(bot) {
     }
     const village = fmt.VILLAGES[idx];
     if (!village) {
-      await ctx.reply('Не удалось распознать деревню, попробуйте ещё раз.');
+      await ctx.reply('Не удалось распознать населённый пункт, попробуйте ещё раз.');
       return;
     }
     st.village = village;
@@ -456,8 +456,8 @@ function registerAdminFlow(bot) {
     // нужно точно знать, откуда забрать или куда доставить внутри деревни.
     const addressPrompt =
       st.direction === 'YA_UFA'
-        ? 'Введите адрес в деревне, откуда забрать посылку:'
-        : 'Введите адрес в деревне, куда доставить посылку:';
+        ? 'Введите адрес в населённом пункте, откуда забрать посылку:'
+        : 'Введите адрес в населённом пункте, куда доставить посылку:';
     await ctx.reply(addressPrompt);
   }));
 
@@ -752,6 +752,24 @@ function registerAdminFlow(bot) {
     );
   }));
 
+  bot.action(/^a:daycap:(s\d+):(\d{8})$/, guardWife(async (ctx) => {
+    const carId = ctx.match[1];
+    const dateCompact = ctx.match[2];
+    const date = `${dateCompact.slice(0, 4)}-${dateCompact.slice(4, 6)}-${dateCompact.slice(6, 8)}`;
+    const info = carInfo(carId, date);
+    if (!info) {
+      await ctx.reply('Этот рейс больше недоступен.');
+      return;
+    }
+    const occupied = db.occupiedSeats(carId, date);
+    session.set(getUserId(ctx), { step: 'admin_daycap_edit', scheduleId: carId, date });
+    await ctx.reply(
+      `Сейчас в рейсе ${info.capacity} мест, занято: ${occupied}.\n` +
+        `Введите новое число мест ТОЛЬКО на ${fmt.formatDateRu(date)}.\n` +
+        'На другие дни число мест не изменится.'
+    );
+  }));
+
   bot.action(/^a:daydel:(s\d+):(\d{8})$/, guardWife(async (ctx) => {
     const carId = ctx.match[1];
     const dateCompact = ctx.match[2];
@@ -843,7 +861,7 @@ function registerAdminFlow(bot) {
       st.phone = fmt.normalizePhone(text);
       st.step = 'admin_add_village';
       session.set(userId, st);
-      const villagePrompt = st.direction === 'YA_UFA' ? 'Из какой деревни пассажир?' : 'В какую деревню едет пассажир?';
+      const villagePrompt = st.direction === 'YA_UFA' ? 'Из какого населённого пункта пассажир?' : 'В какой населённый пункт едет пассажир?';
       await ctx.reply(villagePrompt, {
         attachments: [kb.villageKeyboard('a:addvillage', `a:trip:${st.scheduleId}:${st.date.replace(/-/g, '')}`)],
       });
@@ -862,7 +880,7 @@ function registerAdminFlow(bot) {
         await ctx.reply('Введите число мест (например, 1):');
         return;
       }
-      const free = capacityOf(st.scheduleId) - db.occupiedSeats(st.scheduleId, st.date);
+      const free = capacityOf(st.scheduleId, st.date) - db.occupiedSeats(st.scheduleId, st.date);
       if (count > free) {
         await ctx.reply(`Свободно только ${free} мест(а).`);
         return;
@@ -917,7 +935,7 @@ function registerAdminFlow(bot) {
       st.phone = fmt.normalizePhone(text);
       st.step = 'admin_addparcel_village';
       session.set(userId, st);
-      const villagePrompt = st.direction === 'YA_UFA' ? 'Из какой деревни посылка?' : 'В какую деревню доставить посылку?';
+      const villagePrompt = st.direction === 'YA_UFA' ? 'Из какого населённого пункта посылка?' : 'В какой населённый пункт доставить посылку?';
       await ctx.reply(villagePrompt, {
         attachments: [kb.villageKeyboard('a:addparcelvillage', `a:trip:${st.scheduleId}:${st.date.replace(/-/g, '')}`)],
       });
@@ -1030,7 +1048,7 @@ function registerAdminFlow(bot) {
           await ctx.reply('Введите число мест (например, 1), либо «-», чтобы оставить как есть:');
           return;
         }
-        const capacity = capacityOf(before.scheduleId);
+        const capacity = capacityOf(before.scheduleId, before.date);
         // Свободные места с учётом этой же заявки (иначе её собственные места
         // посчитались бы как «занятые» и мешали бы увеличить их же количество)
         const freeIncludingThis = capacity - db.occupiedSeats(before.scheduleId, before.date) + before.seats;
@@ -1075,6 +1093,46 @@ function registerAdminFlow(bot) {
       db.addScheduleItem(st.direction, text, st.weekdays);
       session.clear(userId);
       await ctx.reply('✅ Рейс добавлен в расписание.', { attachments: [kb.scheduleListKeyboard(db.getSchedule())] });
+      return;
+    }
+
+    if (st.step === 'admin_daycap_edit') {
+      const cap = parseInt(text, 10);
+      if (!Number.isInteger(cap) || cap < 1 || cap > 99) {
+        await ctx.reply('Введите число мест (например, 4):');
+        return;
+      }
+      const occupied = db.occupiedSeats(st.scheduleId, st.date);
+      if (cap < occupied) {
+        await ctx.reply(
+          `❌ Сейчас уже занято ${occupied} мест(а) — меньше поставить нельзя. ` +
+            `Сначала отмените лишние заявки, либо укажите число не меньше ${occupied}.`
+        );
+        return;
+      }
+      // Если ввели обычное число мест (MAX_SEATS) — просто снимаем исключение по местам
+      db.setOverrideCapacity(st.date, st.scheduleId, cap === config.maxSeats ? null : cap);
+      session.clear(userId);
+      const info = carInfo(st.scheduleId, st.date);
+      await ctx.reply(
+        `✅ Число мест изменено только для ${fmt.formatDateRu(st.date)}: теперь ${info.capacity}.`,
+        {
+          attachments: [
+            kb.adminTripDetailKeyboard(
+              db.getActiveBookingsForTrip(st.scheduleId, st.date),
+              st.scheduleId,
+              st.date.replace(/-/g, ''),
+              false
+            ),
+          ],
+        }
+      );
+      refreshGroupBroadcastIfChanged(
+        bot,
+        st.date,
+        freeTripsForBroadcast(st.date),
+        buildGroupBroadcastText
+      ).catch((e) => console.error('Не удалось обновить объявление в группе:', e));
       return;
     }
 

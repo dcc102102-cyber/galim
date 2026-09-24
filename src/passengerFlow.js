@@ -209,7 +209,7 @@ function registerPassengerFlow(bot) {
       ...(prefill ? { prefill } : {}),
     });
     const villagePrompt =
-      (item.direction === 'YA_UFA' ? 'Из какой вы деревни?' : 'В какую деревню вы едете?') +
+      (item.direction === 'YA_UFA' ? 'Из какого вы населённого пункта?' : 'В какой населённый пункт вы едете?') +
       '\n\nЕсли вашего населённого пункта нет в списке — нажмите «Другое» и напишите его сами.';
     await ctx.reply(villagePrompt, { attachments: [kb.villageKeyboard('b', 'b:backtime')] });
   });
@@ -236,7 +236,7 @@ function registerPassengerFlow(bot) {
     }
     const village = fmt.VILLAGES[idx];
     if (!village) {
-      await ctx.reply('Не удалось распознать деревню, попробуйте ещё раз.');
+      await ctx.reply('Не удалось распознать населённый пункт, попробуйте ещё раз.');
       return;
     }
     st.village = village;
@@ -244,7 +244,7 @@ function registerPassengerFlow(bot) {
       // Едем В Уфу — машина забирает от конкретного адреса в деревне.
       st.step = 'awaiting_address';
       session.set(userId, st);
-      await ctx.reply('Напишите ваш адрес в деревне (откуда забрать):');
+      await ctx.reply('Напишите ваш адрес в населённом пункте (откуда забрать):');
     } else {
       // Едем ИЗ Уфы — посадка с конечной точки (остановка Галле), адрес не нужен.
       await askNameOrUsePrefill(ctx, userId, st);
@@ -282,11 +282,11 @@ function registerPassengerFlow(bot) {
     if (st.direction === 'YA_UFA') {
       st.step = 'awaiting_address';
       session.set(userId, st);
-      await ctx.reply('Напишите ваш адрес в деревне (откуда забрать):');
+      await ctx.reply('Напишите ваш адрес в населённом пункте (откуда забрать):');
     } else {
       st.step = 'awaiting_village';
       session.set(userId, st);
-      await ctx.reply('В какую деревню вы едете?', { attachments: [kb.villageKeyboard('b', 'b:backtime')] });
+      await ctx.reply('В какой населённый пункт вы едете?', { attachments: [kb.villageKeyboard('b', 'b:backtime')] });
     }
   });
 
@@ -502,7 +502,7 @@ function registerPassengerFlow(bot) {
       if (st.direction === 'YA_UFA') {
         st.step = 'awaiting_address';
         session.set(userId, st);
-        await ctx.reply('Напишите ваш адрес в деревне (откуда забрать):');
+        await ctx.reply('Напишите ваш адрес в населённом пункте (откуда забрать):');
       } else {
         await askNameOrUsePrefill(ctx, userId, st);
       }

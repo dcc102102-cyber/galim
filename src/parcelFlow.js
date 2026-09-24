@@ -152,7 +152,7 @@ function registerParcelFlow(bot) {
       ...(prefill ? { prefill } : {}),
     });
     const villagePrompt =
-      (item.direction === 'YA_UFA' ? 'Из какой деревни посылка?' : 'В какую деревню доставить посылку?') +
+      (item.direction === 'YA_UFA' ? 'Из какого населённого пункта посылка?' : 'В какой населённый пункт доставить посылку?') +
       '\n\nЕсли вашего населённого пункта нет в списке — нажмите «Другое» и напишите его сами.';
     await ctx.reply(villagePrompt, { attachments: [kb.villageKeyboard('p', 'p:backtime')] });
   });
@@ -179,7 +179,7 @@ function registerParcelFlow(bot) {
     }
     const village = fmt.VILLAGES[idx];
     if (!village) {
-      await ctx.reply('Не удалось распознать деревню, попробуйте ещё раз.');
+      await ctx.reply('Не удалось распознать населённый пункт, попробуйте ещё раз.');
       return;
     }
     st.village = village;
@@ -189,8 +189,8 @@ function registerParcelFlow(bot) {
     // посылку нужно точно куда-то доставить или откуда-то забрать внутри деревни.
     const addressPrompt =
       st.direction === 'YA_UFA'
-        ? 'Напишите адрес в деревне, откуда забрать посылку:'
-        : 'Напишите адрес в деревне, куда доставить посылку:';
+        ? 'Напишите адрес в населённом пункте, откуда забрать посылку:'
+        : 'Напишите адрес в населённом пункте, куда доставить посылку:';
     await ctx.reply(addressPrompt);
   });
 
@@ -227,8 +227,8 @@ function registerParcelFlow(bot) {
     session.set(userId, st);
     const addressPrompt =
       st.direction === 'YA_UFA'
-        ? 'Напишите адрес в деревне, откуда забрать посылку:'
-        : 'Напишите адрес в деревне, куда доставить посылку:';
+        ? 'Напишите адрес в населённом пункте, откуда забрать посылку:'
+        : 'Напишите адрес в населённом пункте, куда доставить посылку:';
     await ctx.reply(addressPrompt);
   });
 
@@ -353,8 +353,8 @@ function registerParcelFlow(bot) {
       session.set(userId, st);
       const addressPrompt =
         st.direction === 'YA_UFA'
-          ? 'Напишите адрес в деревне, откуда забрать посылку:'
-          : 'Напишите адрес в деревне, куда доставить посылку:';
+          ? 'Напишите адрес в населённом пункте, откуда забрать посылку:'
+          : 'Напишите адрес в населённом пункте, куда доставить посылку:';
       await ctx.reply(addressPrompt);
       return;
     }

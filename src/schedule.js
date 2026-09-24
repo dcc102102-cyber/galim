@@ -37,11 +37,16 @@ function carInfo(carId, date) {
     const ov = db.getOverride(date, carId);
     if (ov && ov.time) time = ov.time;
   }
-  return { direction: item.direction, time, capacity: config.maxSeats, isExtra: false };
+  let capacity = config.maxSeats;
+  if (date) {
+    const ov = db.getOverride(date, carId);
+    if (ov && ov.capacity) capacity = ov.capacity;
+  }
+  return { direction: item.direction, time, capacity, isExtra: false };
 }
 
-function capacityOf(carId) {
-  const info = carInfo(carId);
+function capacityOf(carId, date) {
+  const info = carInfo(carId, date);
   return info ? info.capacity : 0;
 }
 
@@ -54,12 +59,13 @@ function availableTrips(direction, date) {
     .filter((s) => !isPastTrip(date, s.time))
     .map((s) => {
       const occupied = db.occupiedSeats(s.id, date);
+      const cap = s.capacity || config.maxSeats;
       return {
         id: s.id,
         time: s.time,
         occupied,
-        max: config.maxSeats,
-        free: Math.max(0, config.maxSeats - occupied),
+        max: cap,
+        free: Math.max(0, cap - occupied),
         isExtra: false,
       };
     });
@@ -88,13 +94,14 @@ function availableTrips(direction, date) {
 function allTripsForDate(date) {
   const scheduled = db.getScheduleForDate(date).map((s) => {
     const occupied = db.occupiedSeats(s.id, date);
+    const cap = s.capacity || config.maxSeats;
     return {
       id: s.id,
       direction: s.direction,
       time: s.time,
       occupied,
-      max: config.maxSeats,
-      free: Math.max(0, config.maxSeats - occupied),
+      max: cap,
+      free: Math.max(0, cap - occupied),
       isExtra: false,
       overridden: s.overridden,
     };

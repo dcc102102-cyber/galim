@@ -320,6 +320,7 @@ function adminTripDetailKeyboard(bookings, carId, dateCompact, isExtra, restoreI
     rows.push([Keyboard.button.callback('✏️ Изменить число мест', `a:extracap:${carId}`)]);
     rows.push([Keyboard.button.callback('🗑 Удалить эту машину', `a:extradel:${carId}`)]);
   } else {
+    rows.push([Keyboard.button.callback('✏️ Изменить число мест (только на этот день)', `a:daycap:${carId}:${dateCompact}`)]);
     rows.push([Keyboard.button.callback('✏️ Изменить время (только на этот день)', `a:daytime:${carId}:${dateCompact}`)]);
     rows.push([Keyboard.button.callback('🚫 Отменить рейс на этот день', `a:daydel:${carId}:${dateCompact}`)]);
   }
