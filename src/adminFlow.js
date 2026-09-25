@@ -93,15 +93,33 @@ function freeTripsForBroadcast(date) {
 // один день (оба направления). Как и buildGroupFreeSeatsText, не содержит никаких
 // данных о пассажирах — только направления, время и число свободных мест.
 function buildGroupBroadcastText(date, trips) {
-  const dayWord = date === fmt.todayISO() ? 'сегодня, ' : date === fmt.tomorrowISO() ? 'завтра, ' : '';
-  let text = `🚕 ${fmt.bold(`Свободные места на ${dayWord}${fmt.formatDateRu(date)}:`)}\n\n`;
+  const [y, m, d] = date.split('-');
+  const yy = y.slice(-2);
+  const weekdayShort = fmt.WEEKDAY_SHORT[fmt.weekdayOf(date)];
+
+  const byDirection = { YA_UFA: [], UFA_YA: [] };
   trips.forEach((t) => {
-    text += `${fmt.bold(fmt.directionLabel(t.direction))} ${fmt.bold(t.time)}${t.isExtra ? ' 🚐(доп)' : ''}\n`;
+    const time = t.time.replace(/^0/, '');
+    byDirection[t.direction].push(`${time}${t.isExtra ? ' 🚐' : ''}`);
   });
+
+  const blocks = [];
+  if (byDirection.YA_UFA.length) {
+    blocks.push(`✅АКЪЯР ➩ УФА\n⏰️ ${byDirection.YA_UFA.join(', ')}`);
+  }
+  if (byDirection.UFA_YA.length) {
+    blocks.push(`✅УФА ➩ АКЪЯР\n⏰️ ${byDirection.UFA_YA.join(', ')}`);
+  }
+
+  let text = `‼️ВНИМАНИЕ ‼️\n✍️${d}.${m}.${yy}. ${weekdayShort}.\n🚕Есть места!\n`;
+  text += blocks.join('\n          💥🌞💥\n');
   text +=
-    `\nЧтобы записаться — напишите боту в личные сообщения:\n` +
-    `🤖 https://max.ru/id021401888395_1_bot\n` +
-    `или позвоните: +79273336124`;
+    `\n==============\n` +
+    `ЕЖЕДНЕВНО, QRчеки\n` +
+    `☎️+79273336124 \n` +
+    `ТУЛПАР\n\n` +
+    `Чтобы записаться — напишите боту в личные сообщения:\n` +
+    `https://max.ru/id021401888395_1_bot`;
   return text;
 }
 
