@@ -9,6 +9,15 @@ const { getUserId, getChatId, getText, getUserName, getContactFromMessage } = re
 const { notifyAdmins, freeTripsForBroadcast, buildGroupBroadcastText } = require('./adminFlow');
 const { refreshGroupBroadcastIfChanged } = require('./groupUtil');
 
+// Текст вопроса про адрес зависит от направления: если едем из деревни (в Уфу) —
+// нужен адрес в деревне (откуда забрать), если едем из города (в деревню) —
+// нужен адрес в Уфе (откуда забрать).
+function addressPrompt(direction) {
+  return direction === 'YA_UFA'
+    ? 'Напишите ваш адрес в населённом пункте (откуда забрать):'
+    : 'Напишите ваш адрес в Уфе (откуда забрать):';
+}
+
 function notifyWife(bot, booking) {
   if (config.adminIds.length === 0) return;
   const occupied = db.occupiedSeats(booking.scheduleId, booking.date);
@@ -240,15 +249,10 @@ function registerPassengerFlow(bot) {
       return;
     }
     st.village = village;
-    if (st.direction === 'YA_UFA') {
-      // Едем В Уфу — машина забирает от конкретного адреса в деревне.
-      st.step = 'awaiting_address';
-      session.set(userId, st);
-      await ctx.reply('Напишите ваш адрес в населённом пункте (откуда забрать):');
-    } else {
-      // Едем ИЗ Уфы — посадка с конечной точки (остановка Галле), адрес не нужен.
-      await askNameOrUsePrefill(ctx, userId, st);
-    }
+    // Адрес спрашиваем всегда: в деревне (если едем в Уфу) или в Уфе (если едем из Уфы).
+    st.step = 'awaiting_address';
+    session.set(userId, st);
+    await ctx.reply(addressPrompt(st.direction));
   });
 
   // Если у пассажира уже есть предыдущая заявка (прешел по кнопке «Записаться ещё раз»),
@@ -270,8 +274,8 @@ function registerPassengerFlow(bot) {
     }
   }
 
-  // Кнопка «Назад» с шага ввода имени — возвращает к вводу адреса (если едем
-  // в Уфу) или к выбору деревни (если едем из Уфы, адрес не запрашивался)
+  // Кнопка «Назад» с шага ввода имени — возвращает к вводу адреса (он теперь
+  // запрашивается для обоих направлений: в деревне или в Уфе).
   bot.action('b:backname', async (ctx) => {
     const userId = getUserId(ctx);
     const st = session.get(userId);
@@ -279,15 +283,9 @@ function registerPassengerFlow(bot) {
       await ctx.reply('Начните запись заново: нажмите «Записаться на поездку».');
       return;
     }
-    if (st.direction === 'YA_UFA') {
-      st.step = 'awaiting_address';
-      session.set(userId, st);
-      await ctx.reply('Напишите ваш адрес в населённом пункте (откуда забрать):');
-    } else {
-      st.step = 'awaiting_village';
-      session.set(userId, st);
-      await ctx.reply('В какой населённый пункт вы едете?', { attachments: [kb.villageKeyboard('b', 'b:backtime')] });
-    }
+    st.step = 'awaiting_address';
+    session.set(userId, st);
+    await ctx.reply(addressPrompt(st.direction));
   });
 
   // Кнопка «Назад» с шага ввода телефона — возвращает к вводу имени
@@ -503,13 +501,9 @@ function registerPassengerFlow(bot) {
         return;
       }
       st.village = village;
-      if (st.direction === 'YA_UFA') {
-        st.step = 'awaiting_address';
-        session.set(userId, st);
-        await ctx.reply('Напишите ваш адрес в населённом пункте (откуда забрать):');
-      } else {
-        await askNameOrUsePrefill(ctx, userId, st);
-      }
+      st.step = 'awaiting_address';
+      session.set(userId, st);
+      await ctx.reply(addressPrompt(st.direction));
       return;
     }
 
