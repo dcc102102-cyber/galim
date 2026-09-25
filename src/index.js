@@ -10,6 +10,7 @@ const http = require('http');
 
 const config = require('./config');
 const kb = require('./keyboards');
+const fmt = require('./format');
 const session = require('./session');
 const { getUserId, getUserName, getChatId } = require('./ctxHelpers');
 const { registerPassengerFlow } = require('./passengerFlow');
@@ -84,6 +85,12 @@ registerPassengerFlow(bot);
 registerParcelFlow(bot);
 registerAdminFlow(bot);
 registerDriverFlow(bot);
+
+// Кнопка «💰 Цены» в главном меню — просто показывает текст с тарифами
+// и кнопку «⬅️ Назад», ведущую обратно в главное меню (см. go:home ниже).
+bot.action('menu:prices', async (ctx) => {
+  await ctx.reply(fmt.PRICES_TEXT, { attachments: [kb.pricesKeyboard()] });
+});
 
 // Общая кнопка «🏠 Главное меню», доступная на всех клиентских экранах записи/посылки —
 // сбрасывает любой незавершённый многошаговый ввод и показывает меню по роли пользователя.

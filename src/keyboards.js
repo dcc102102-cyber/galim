@@ -7,6 +7,16 @@ function mainMenuKeyboard() {
     [Keyboard.button.callback('🚌 Записаться на поездку', 'b:start')],
     [Keyboard.button.callback('📦 Отправить посылку', 'p:start')],
     [Keyboard.button.callback('📋 Мои заказы', 'b:myorders')],
+    [Keyboard.button.callback('💰 Цены', 'menu:prices')],
+  ]);
+}
+
+// Экран «Цены»: просто текст с тарифами (см. fmt.PRICES_TEXT) и кнопка
+// «Назад» — возвращает в главное меню тем же способом, что и «🏠 Главное
+// меню» (go:home), но подписана иначе, как просили — «⬅️ Назад».
+function pricesKeyboard() {
+  return Keyboard.inlineKeyboard([
+    [Keyboard.button.callback('⬅️ Назад', 'go:home')],
   ]);
 }
 
@@ -459,6 +469,7 @@ function prefillConfirmKeyboard(prefix) {
 
 module.exports = {
   mainMenuKeyboard,
+  pricesKeyboard,
   afterCancelKeyboard,
   myOrdersKeyboard,
   adminEntryKeyboard,
