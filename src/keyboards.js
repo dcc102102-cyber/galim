@@ -293,8 +293,17 @@ function adminDayKeyboard() {
 }
 
 // items: [{id, direction, time, occupied, max, isExtra}]
+// Порядок направлений в списке рейсов админки: сначала «Уфа → Акьяр», потом
+// «Акьяр → Уфа» (внутри каждого направления — по времени, как и раньше).
+const TRIP_DIRECTION_ORDER = { UFA_YA: 0, YA_UFA: 1 };
+
 function adminTripListKeyboard(items, dateCompact) {
-  const rows = items.map((it) => [
+  const sorted = [...items].sort((a, b) => {
+    const d = TRIP_DIRECTION_ORDER[a.direction] - TRIP_DIRECTION_ORDER[b.direction];
+    if (d !== 0) return d;
+    return a.time.localeCompare(b.time);
+  });
+  const rows = sorted.map((it) => [
     Keyboard.button.callback(
       `${fmt.directionLabel(it.direction)} ${it.time}${it.isExtra ? ' 🚐' : ''} (${it.occupied}/${it.max})`,
       `a:trip:${it.id}:${dateCompact}`
