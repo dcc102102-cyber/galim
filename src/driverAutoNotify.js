@@ -44,7 +44,7 @@ function checkAndNotify(bot) {
     const text = `⏰ Автонапоминание: до рейса ${minutesUntil} мин.\n\n${buildDriverText(info, date, bookings)}`;
 
     bot.api
-      .sendMessageToUser(config.driverId, text)
+      .sendMessageToUser(config.driverId, text, { format: 'markdown' })
       .then(() => db.markAutoNotified(date, t.id))
       .catch((e) => console.error(`Не удалось отправить авто-список водителю (рейс ${t.id}):`, e));
   });

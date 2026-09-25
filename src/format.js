@@ -160,7 +160,23 @@ function parseRuDate(text) {
 // YYYY-MM-DD -> ДД.ММ.ГГГГ для показа пользователю
 function formatDateRu(iso) {
   const [y, m, d] = iso.split('-');
-  return `${d}.${m}.${y}`;
+  const weekday = WEEKDAY_FULL[new Date(Number(y), Number(m) - 1, Number(d)).getDay()];
+  return `${d}.${m}.${y}, ${weekday.toLowerCase()}`;
+}
+
+// Экранирует спецсимволы MAX-разметки (**жирный**, __курсив__, ~~зачёркнутый~~,
+// ++подчёркнутый++, `код`, [ссылки]) в тексте, который ввёл человек (имя,
+// телефон, адрес, заметка), — чтобы случайные звёздочки/подчёркивания в чужом
+// тексте не ломали форматирование остального сообщения.
+function escapeMd(text) {
+  return String(text).replace(/([*_~+`\[\]])/g, '\\$1');
+}
+
+// Оборачивает текст в жирное начертание (разметка MAX, см. dev.max.ru/docs/chatbots/bots-coding/formatting).
+// Использовать только для собственного (статического) текста бота, не для
+// текста, введённого пользователем, — для него сначала escapeMd().
+function bold(text) {
+  return `**${text}**`;
 }
 
 function directionLabel(code) {
@@ -262,6 +278,8 @@ function rideConfirmIcon(b) {
 }
 
 module.exports = {
+  escapeMd,
+  bold,
   DIRECTIONS,
   VILLAGES,
   STATUS_ICON,

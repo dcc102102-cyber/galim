@@ -114,8 +114,8 @@ function registerParcelFlow(bot) {
     session.set(userId, { step: 'p_time', direction, date, ...(prefill ? { prefill } : {}) });
     const compact = date.replace(/-/g, '');
     await ctx.reply(
-      `📦 ${fmt.directionLabel(direction)}\n📅 ${fmt.formatDateRu(date)}\n\nВыберите рейс:`,
-      { attachments: [kb.parcelTimeKeyboard(trips, compact, 'p:backdate')] }
+      `📦 ${fmt.bold(fmt.directionLabel(direction))}\n📅 ${fmt.bold(fmt.formatDateRu(date))}\n\n${fmt.bold('Выберите рейс:')}`,
+      { attachments: [kb.parcelTimeKeyboard(trips, compact, 'p:backdate')], format: 'markdown' }
     );
   }
 
@@ -287,10 +287,10 @@ function registerParcelFlow(bot) {
     });
     session.clear(userId);
     await ctx.reply(
-      `✅ Посылка принята!\n\n🚌 ${fmt.directionLabel(st.direction)}\n📅 ${fmt.formatDateRu(st.date)}\n🕡 ${st.time}\n🏘 ${st.village}` +
-        (st.address ? `\n📍 ${st.address}` : '') +
-        `\n👤 ${st.name}\n📞 ${st.phone}\n📦 Посылка\n\nМы свяжемся с вами при необходимости.`,
-      { attachments: [kb.myParcelCancelKeyboard(booking.id)] }
+      `✅ ${fmt.bold('Посылка принята!')}\n\n🚌 ${fmt.bold(fmt.directionLabel(st.direction))}\n📅 ${fmt.bold(fmt.formatDateRu(st.date))}\n🕡 ${fmt.bold(st.time)}\n🏘 ${fmt.escapeMd(st.village)}` +
+        (st.address ? `\n📍 ${fmt.escapeMd(st.address)}` : '') +
+        `\n👤 ${fmt.escapeMd(st.name)}\n📞 ${st.phone}\n📦 Посылка\n\nМы свяжемся с вами при необходимости.`,
+      { attachments: [kb.myParcelCancelKeyboard(booking.id)], format: 'markdown' }
     );
     notifyWifeParcel(bot, booking);
   }
@@ -336,6 +336,10 @@ function registerParcelFlow(bot) {
       const iso = fmt.parseRuDate(text);
       if (!iso) {
         await ctx.reply('Не удалось распознать дату. Введите в формате ДД.ММ.ГГГГ, например 15.08.2026:');
+        return;
+      }
+      if (iso < fmt.todayISO()) {
+        await ctx.reply('Эта дата уже прошла. Введите сегодняшнюю дату или дату в будущем, например 15.08.2026:');
         return;
       }
       await showParcelTimeOptions(ctx, userId, st.direction, iso, st.prefill);

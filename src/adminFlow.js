@@ -43,7 +43,7 @@ function bookingDetailLabel(b) {
 function buildDriverText(info, date, bookings) {
   const passengers = bookings.filter((b) => b.kind !== 'parcel');
   const parcels = bookings.filter((b) => b.kind === 'parcel');
-  let text = `🚗 РЕЙС${info.isExtra ? ' (доп. машина)' : ''}\n\n${fmt.directionLabel(info.direction)}\n${fmt.formatDateRu(date)}, ${info.time}\n`;
+  let text = `🚗 ${fmt.bold(`РЕЙС${info.isExtra ? ' (доп. машина)' : ''}`)}\n\n${fmt.bold(fmt.directionLabel(info.direction))}\n${fmt.bold(`${fmt.formatDateRu(date)}, ${info.time}`)}\n`;
   if (passengers.length > 0) {
     text += '\n👥 Пассажиры:\n\n';
     passengers.forEach((b, i) => {
@@ -74,9 +74,9 @@ function buildDriverText(info, date, bookings) {
 // в общий чат, а не список для водителя.
 function buildGroupFreeSeatsText(info, date, free) {
   return (
-    `🚕 Есть свободные места!\n\n` +
-    `${fmt.directionLabel(info.direction)}${info.isExtra ? ' 🚐 (доп. машина)' : ''}\n` +
-    `${fmt.formatDateRu(date)}, ${info.time}\n\n` +
+    `🚕 ${fmt.bold('Есть свободные места!')}\n\n` +
+    `${fmt.bold(fmt.directionLabel(info.direction))}${info.isExtra ? ' 🚐 (доп. машина)' : ''}\n` +
+    `${fmt.bold(`${fmt.formatDateRu(date)}, ${info.time}`)}\n\n` +
     `Чтобы записаться — напишите боту в личные сообщения:\n` +
     `🤖 https://max.ru/id021401888395_1_bot\n` +
     `или позвоните: +79273336124`
@@ -94,9 +94,9 @@ function freeTripsForBroadcast(date) {
 // данных о пассажирах — только направления, время и число свободных мест.
 function buildGroupBroadcastText(date, trips) {
   const dayWord = date === fmt.todayISO() ? 'сегодня, ' : date === fmt.tomorrowISO() ? 'завтра, ' : '';
-  let text = `🚕 Свободные места на ${dayWord}${fmt.formatDateRu(date)}:\n\n`;
+  let text = `🚕 ${fmt.bold(`Свободные места на ${dayWord}${fmt.formatDateRu(date)}:`)}\n\n`;
   trips.forEach((t) => {
-    text += `${fmt.directionLabel(t.direction)} ${t.time}${t.isExtra ? ' 🚐(доп)' : ''}\n`;
+    text += `${fmt.bold(fmt.directionLabel(t.direction))} ${fmt.bold(t.time)}${t.isExtra ? ' 🚐(доп)' : ''}\n`;
   });
   text +=
     `\nЧтобы записаться — напишите боту в личные сообщения:\n` +
@@ -111,7 +111,7 @@ function tripDetailText(carId, date) {
   const active = bookings.filter((b) => b.status !== 'cancelled');
   const total = active.filter((b) => b.kind !== 'parcel').reduce((s, b) => s + b.seats, 0);
   const parcelCount = active.filter((b) => b.kind === 'parcel').length;
-  let text = `${fmt.directionLabel(info.direction)}${info.isExtra ? ' 🚐 (доп. машина)' : ''}\n${fmt.formatDateRu(date)} — ${info.time}\n\n`;
+  let text = `${fmt.bold(fmt.directionLabel(info.direction))}${info.isExtra ? ' 🚐 (доп. машина)' : ''}\n${fmt.bold(`${fmt.formatDateRu(date)} — ${info.time}`)}\n\n`;
   if (bookings.length === 0) {
     text += 'Пока никто не записан.\n';
   } else {
@@ -267,9 +267,9 @@ function registerAdminFlow(bot) {
     // разовую машину на этот день — поэтому не блокируем экран полностью.
     await ctx.reply(
       trips.length === 0
-        ? `📅 На ${fmt.formatDateRu(date)} нет рейсов в расписании. Можно добавить разовую машину:`
-        : `📅 Рейсы на ${fmt.formatDateRu(date)}:`,
-      { attachments: [kb.adminTripListKeyboard(trips, compact)] }
+        ? `📅 На ${fmt.bold(fmt.formatDateRu(date))} нет рейсов в расписании. Можно добавить разовую машину:`
+        : `📅 ${fmt.bold(`Рейсы на ${fmt.formatDateRu(date)}:`)}`,
+      { attachments: [kb.adminTripListKeyboard(trips, compact)], format: 'markdown' }
     );
   }
 
@@ -291,6 +291,7 @@ function registerAdminFlow(bot) {
     const bookings = db.getActiveBookingsForTrip(carId, date);
     await ctx.reply(tripDetailText(carId, date), {
       attachments: [kb.adminTripDetailKeyboard(bookings, carId, dateCompact, info.isExtra)],
+      format: 'markdown',
     });
   }));
 
@@ -479,8 +480,9 @@ function registerAdminFlow(bot) {
     }
     const text = buildDriverText(info, date, bookings);
     bookings.forEach((b) => db.updateBooking(b.id, { status: 'sent' }));
-    await ctx.reply(`📋 Список для водителя (перешлите нужному водителю сами):\n\n${text}`, {
+    await ctx.reply(`📋 ${fmt.bold('Список для водителя (перешлите нужному водителю сами):')}\n\n${text}`, {
       attachments: [kb.driverListKeyboard(carId, dateCompact)],
+      format: 'markdown',
     });
   }));
 

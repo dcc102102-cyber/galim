@@ -22,7 +22,7 @@ function sendToAllGroups(bot, text) {
   return Promise.all(
     config.groupChatIds.map((chatId) =>
       bot.api
-        .sendMessageToChat(chatId, text)
+        .sendMessageToChat(chatId, text, { format: 'markdown' })
         .catch((e) => console.error(`Не удалось отправить сообщение в группу ${chatId}:`, e))
     )
   );
@@ -79,7 +79,7 @@ async function publishGroupBroadcast(bot, date, text, trips) {
         console.log(`[groupUtil] Предыдущего объявления за ${date} в группе ${chatId} не найдено (нечего удалять)`);
       }
       try {
-        const res = await bot.api.sendMessageToChat(chatId, text);
+        const res = await bot.api.sendMessageToChat(chatId, text, { format: 'markdown' });
         const messageId = extractMessageId(res);
         if (messageId) {
           console.log(`[groupUtil] Новое объявление отправлено, id=${messageId} (группа ${chatId}, дата ${date})`);

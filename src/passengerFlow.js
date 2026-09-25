@@ -118,8 +118,8 @@ function registerPassengerFlow(bot) {
     session.set(userId, { step: 'time', direction, date, ...(prefill ? { prefill } : {}) });
     const compact = date.replace(/-/g, '');
     await ctx.reply(
-      `🚌 ${fmt.directionLabel(direction)}\n📅 ${fmt.formatDateRu(date)}\n\nВыберите рейс:`,
-      { attachments: [kb.timeKeyboard('b', trips, compact, 'b:backdate')] }
+      `🚌 ${fmt.bold(fmt.directionLabel(direction))}\n📅 ${fmt.bold(fmt.formatDateRu(date))}\n\n${fmt.bold('Выберите рейс:')}`,
+      { attachments: [kb.timeKeyboard('b', trips, compact, 'b:backdate')], format: 'markdown' }
     );
   }
 
@@ -173,8 +173,8 @@ function registerPassengerFlow(bot) {
       phone: prefill ? prefill.phone : null,
     });
     await ctx.reply(
-      `🔔 Записал вас в лист ожидания:\n🚌 ${fmt.directionLabel(item.direction)}\n📅 ${fmt.formatDateRu(date)}\n🕡 ${item.time}\n\nКак только кто-то отменит поездку — сразу напишу вам.`,
-      { attachments: [kb.mainMenuKeyboard()] }
+      `🔔 ${fmt.bold('Записал вас в лист ожидания:')}\n🚌 ${fmt.bold(fmt.directionLabel(item.direction))}\n📅 ${fmt.bold(fmt.formatDateRu(date))}\n🕡 ${fmt.bold(item.time)}\n\nКак только кто-то отменит поездку — сразу напишу вам.`,
+      { attachments: [kb.mainMenuKeyboard()], format: 'markdown' }
     );
   });
 
@@ -384,12 +384,12 @@ function registerPassengerFlow(bot) {
     });
     session.clear(userId);
     await ctx.reply(
-      `✅ Вы записаны!\n\n🚌 ${fmt.directionLabel(st.direction)}\n📅 ${fmt.formatDateRu(st.date)}\n🕡 ${st.time}\n🏘 ${st.village}` +
-        (st.address ? `\n📍 ${st.address}` : '') +
-        `\n👤 ${st.name}\n📞 ${st.phone}\n👥 ${st.count} пассажир(а/ов)` +
-        (st.note ? `\n📝 ${st.note}` : '') +
+      `✅ ${fmt.bold('Вы записаны!')}\n\n🚌 ${fmt.bold(fmt.directionLabel(st.direction))}\n📅 ${fmt.bold(fmt.formatDateRu(st.date))}\n🕡 ${fmt.bold(st.time)}\n🏘 ${fmt.escapeMd(st.village)}` +
+        (st.address ? `\n📍 ${fmt.escapeMd(st.address)}` : '') +
+        `\n👤 ${fmt.escapeMd(st.name)}\n📞 ${st.phone}\n👥 ${st.count} пассажир(а/ов)` +
+        (st.note ? `\n📝 ${fmt.escapeMd(st.note)}` : '') +
         `\n\nМы свяжемся с вами при необходимости.`,
-      { attachments: [kb.myBookingCancelKeyboard(booking.id)] }
+      { attachments: [kb.myBookingCancelKeyboard(booking.id)], format: 'markdown' }
     );
     notifyWife(bot, booking);
     refreshGroupBroadcastIfChanged(
@@ -486,6 +486,10 @@ function registerPassengerFlow(bot) {
       const iso = fmt.parseRuDate(text);
       if (!iso) {
         await ctx.reply('Не удалось распознать дату. Введите в формате ДД.ММ.ГГГГ, например 15.08.2026:');
+        return;
+      }
+      if (iso < fmt.todayISO()) {
+        await ctx.reply('Эта дата уже прошла. Введите сегодняшнюю дату или дату в будущем, например 15.08.2026:');
         return;
       }
       await showTimeOptions(ctx, userId, st.direction, iso, st.prefill);

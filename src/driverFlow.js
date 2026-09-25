@@ -42,8 +42,9 @@ function registerDriverFlow(bot) {
       await ctx.reply('На этот день пока нет пассажиров.');
       return;
     }
-    await ctx.reply(`Рейсы на ${fmt.formatDateRu(date)}:`, {
+    await ctx.reply(`${fmt.bold(`Рейсы на ${fmt.formatDateRu(date)}:`)}`, {
       attachments: [kb.driverTripListKeyboard(trips, date.replace(/-/g, ''))],
+      format: 'markdown',
     });
   }));
 
@@ -70,8 +71,9 @@ function registerDriverFlow(bot) {
       await ctx.reply('На этот день пока нет пассажиров.');
       return;
     }
-    await ctx.reply(`Рейсы на ${fmt.formatDateRu(date)}:`, {
+    await ctx.reply(`${fmt.bold(`Рейсы на ${fmt.formatDateRu(date)}:`)}`, {
       attachments: [kb.driverTripListKeyboard(trips, date.replace(/-/g, ''))],
+      format: 'markdown',
     });
   });
 
@@ -83,8 +85,9 @@ function registerDriverFlow(bot) {
       await ctx.reply('На этот день пока нет пассажиров.');
       return;
     }
-    await ctx.reply(`Рейсы на ${fmt.formatDateRu(date)}:`, {
+    await ctx.reply(`${fmt.bold(`Рейсы на ${fmt.formatDateRu(date)}:`)}`, {
       attachments: [kb.driverTripListKeyboard(trips, dateCompact)],
+      format: 'markdown',
     });
   }));
 
@@ -100,7 +103,7 @@ function registerDriverFlow(bot) {
     const all = fmt.sortByVillageRoute(db.getActiveBookingsForTrip(carId, date), item.direction);
     const passengers = all.filter((b) => b.kind !== 'parcel');
     const parcels = all.filter((b) => b.kind === 'parcel');
-    let text = `${fmt.directionLabel(item.direction)}${item.isExtra ? ' 🚐 (доп. машина)' : ''}\n${fmt.formatDateRu(date)} — ${item.time}\n\n👥 Пассажиры:\n\n`;
+    let text = `${fmt.bold(fmt.directionLabel(item.direction))}${item.isExtra ? ' 🚐 (доп. машина)' : ''}\n${fmt.bold(`${fmt.formatDateRu(date)} — ${item.time}`)}\n\n👥 ${fmt.bold('Пассажиры:')}\n\n`;
     if (passengers.length === 0) {
       text += 'Пока никто не записан.\n';
     } else {
@@ -118,7 +121,7 @@ function registerDriverFlow(bot) {
         text += `${i + 1}. ${b.name} — ${b.phone}${place}\n`;
       });
     }
-    await ctx.reply(text, { attachments: [kb.driverTripBackKeyboard(dateCompact)] });
+    await ctx.reply(text, { attachments: [kb.driverTripBackKeyboard(dateCompact)], format: 'markdown' });
   }));
 }
 

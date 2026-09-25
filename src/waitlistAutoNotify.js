@@ -29,13 +29,13 @@ function checkAndNotify(bot) {
     const entries = db.getWaitlistForTrip(scheduleId, date).filter((e) => e.platform === 'max');
     entries.forEach((entry) => {
       const text =
-        `🎉 Освободилось место!\n\n` +
-        `🚌 ${fmt.directionLabel(item.direction)}\n` +
-        `📅 ${fmt.formatDateRu(date)}\n` +
-        `🕡 ${item.time}\n\n` +
+        `🎉 ${fmt.bold('Освободилось место!')}\n\n` +
+        `🚌 ${fmt.bold(fmt.directionLabel(item.direction))}\n` +
+        `📅 ${fmt.bold(fmt.formatDateRu(date))}\n` +
+        `🕡 ${fmt.bold(item.time)}\n\n` +
         `Успейте записаться, пока место снова не заняли — нажмите «Записаться на поездку» в главном меню.`;
       bot.api
-        .sendMessageToUser(Number(entry.userId), text)
+        .sendMessageToUser(Number(entry.userId), text, { format: 'markdown' })
         .then(() => db.removeWaitlistEntry(entry.id))
         .catch((e) => console.error(`[waitlist] Не удалось уведомить ${entry.userId}:`, e));
     });
